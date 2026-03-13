@@ -1,0 +1,102 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {uid}
+    // Fields:
+    //   - uid: string (required)
+    //   - email: string (required)
+    //   - displayName: string (optional)
+    //   - role: string (enum: ['admin', 'user'])
+    //
+    // Collection: sensors
+    // Document ID: {sensorId}
+    // Fields:
+    //   - id: string (required)
+    //   - location: map {lat: number, lng: number} (required)
+    //   - status: string (enum: ['flowing', 'no-flow', 'offline'])
+    //   - lastUpdate: string (ISO date)
+    //   - battery: number
+    //   - section: string
+    //   - isMaintenanceMode: bool
+    //   - pressure: number
+    //   - flowRate: number
+    //   - temperature: number
+    //
+    // Collection: config
+    // Document ID: system
+    // Fields:
+    //   - mode: string (enum: ['manual-on', 'manual-off', 'automatic'])
+    //   - lastUpdated: string (ISO date)
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         request.auth.token.email == "kirthibangtan3@gmail.com");
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email']) &&
+             data.uid is string &&
+             data.email is string &&
+             (!('role' in data) || data.role in ['admin', 'user']);
+    }
+
+    function isValidSensor(data) {
+      return data.keys().hasAll(['id', 'location', 'status', 'pressure', 'flowRate', 'temperature']) &&
+             data.id is string &&
+             data.location is map &&
+             data.status in ['flowing', 'no-flow', 'offline'] &&
+             data.pressure is number &&
+             data.flowRate is number &&
+             data.temperature is number;
+    }
+
+    function isValidConfig(data) {
+      return data.keys().hasAll(['mode']) &&
+             data.mode in ['manual-on', 'manual-off', 'automatic'];
+    }
+
+    // Rules
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && (!('role' in request.resource.data) || request.resource.data.role == 'user');
+      allow update: if (isOwner(userId) && request.resource.data.role == resource.data.role) || isAdmin();
+    }
+
+    match /sensors/{sensorId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+      
+      match /readings/{readingId} {
+        allow read: if isAuthenticated();
+        allow write: if isAdmin();
+      }
+    }
+
+    match /alerts/{alertId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /config/system {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+  }
+}

@@ -1,0 +1,105 @@
+{
+  "entities": {
+    "Sensor": {
+      "title": "Sensor Node",
+      "description": "A pipeline monitoring sensor node",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "location": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" }
+          }
+        },
+        "status": { "type": "string", "enum": ["flowing", "no-flow", "offline"] },
+        "lastUpdate": { "type": "string", "format": "date-time" },
+        "battery": { "type": "number" },
+        "section": { "type": "string" },
+        "isMaintenanceMode": { "type": "boolean" },
+        "pressure": { "type": "number" },
+        "flowRate": { "type": "number" },
+        "temperature": { "type": "number" }
+      },
+      "required": ["id", "location", "status", "pressure", "flowRate", "temperature"]
+    },
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "User account details",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] }
+      },
+      "required": ["uid", "email"]
+    },
+    "SystemConfig": {
+      "title": "System Configuration",
+      "description": "Global system settings",
+      "type": "object",
+      "properties": {
+        "mode": { "type": "string", "enum": ["manual-on", "manual-off", "automatic"] },
+        "lastUpdated": { "type": "string", "format": "date-time" }
+      },
+      "required": ["mode"]
+    },
+    "FlowReading": {
+      "title": "Flow Reading",
+      "description": "Periodic flow data from a sensor",
+      "type": "object",
+      "properties": {
+        "sensorId": { "type": "string" },
+        "flowRate": { "type": "number" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["sensorId", "flowRate", "timestamp"]
+    },
+    "Alert": {
+      "title": "Alert",
+      "description": "System generated alert",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "sensorId": { "type": "string" },
+        "type": { "type": "string", "enum": ["no-flow", "predictive-maintenance", "offline"] },
+        "severity": { "type": "string", "enum": ["low", "medium", "high", "critical"] },
+        "message": { "type": "string" },
+        "location": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" }
+          }
+        },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "resolved": { "type": "boolean" }
+      },
+      "required": ["sensorId", "type", "message", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "UserProfile",
+      "description": "User profiles"
+    },
+    "/config/system": {
+      "schema": "SystemConfig",
+      "description": "Global system configuration"
+    },
+    "/sensors/{sensorId}": {
+      "schema": "Sensor",
+      "description": "Collection of pipeline sensors"
+    },
+    "/sensors/{sensorId}/readings/{readingId}": {
+      "schema": "FlowReading",
+      "description": "Historical flow readings for a sensor"
+    },
+    "/alerts/{alertId}": {
+      "schema": "Alert",
+      "description": "System alerts"
+    }
+  }
+}

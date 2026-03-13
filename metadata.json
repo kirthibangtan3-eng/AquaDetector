@@ -1,0 +1,7 @@
+{
+  "name": "AquaDetector",
+  "description": "Smart Water Pipeline Monitoring System with real-time pressure, flow, and temperature tracking, GPS-enabled sensor nodes, and predictive alerts.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
